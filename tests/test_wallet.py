@@ -1,5 +1,4 @@
 import os
-import time
 import logging
 
 import pytest
@@ -14,7 +13,7 @@ from .samples import (
     PUBLIC_KEY_COMPRESSED, PUBLIC_KEY_UNCOMPRESSED, PUBLIC_KEY_X,
     PUBLIC_KEY_Y, WALLET_FORMAT_COMPRESSED_MAIN, WALLET_FORMAT_COMPRESSED_TEST,
     WALLET_FORMAT_MAIN, WALLET_FORMAT_TEST,
-    BITCOIN_CASHADDRESS, BITCOIN_CASHADDRESS_TEST
+    BITCOIN_CASHADDRESS, BITCOIN_CASHADDRESS_TEST, TESTNET_WIF
 )
 
 TRAVIS = 'TRAVIS' in os.environ
@@ -217,33 +216,20 @@ class TestPrivateKeyTestnet:
     def test_send_cashaddress(self):
         private_key = PrivateKeyTestnet(WALLET_FORMAT_COMPRESSED_TEST)
 
-        initial = private_key.get_balance()
-        current = initial
-        tries = 0
-        private_key.send([(BITCOIN_CASHADDRESS_TEST, 2000, 'satoshi')])
+        private_key.get_unspents()
+        tx_id = private_key.send([(BITCOIN_CASHADDRESS_TEST, 1010, 'satoshi')])
 
-        time.sleep(3)  # give some time to the indexer to update the balance
-        current = private_key.get_balance()
-
-        logging.debug('Current: {}, Initial: {}'.format(current, initial))
-        assert current < initial
+        logging.debug('Transaction sent: {}'.format(tx_id))
+        assert len(tx_id) == 64
 
     def test_send(self):
-        private_key = PrivateKeyTestnet('cU6s7jckL3bZUUkb3Q2CD9vNu8F1o58K5R5a3JFtidoccMbhEGKZ')
+        private_key = PrivateKeyTestnet(TESTNET_WIF)
+
         private_key.get_unspents()
+        tx_id = private_key.send([(BITCOIN_CASHADDRESS_TEST, 1010, 'satoshi')])
 
-        initial = private_key.balance
-        current = initial
-        tries = 0
-        # FIXME: Changed jpy to satoshi and 1 to 10,000 since we don't yet
-        # have a rates API for BCH in place.
-        private_key.send([('n2eMqTT929pb1RDNuqEnxdaLau1rxy3efi', 2000, 'satoshi')])
-
-        time.sleep(3)  # give some time to the indexer to update the balance
-        current = private_key.get_balance()
-
-        logging.debug('Current: {}, Initial: {}'.format(current, initial))
-        assert current < initial
+        logging.debug('Transaction sent: {}'.format(tx_id))
+        assert len(tx_id) == 64
 
     def test_send_pay2sh(self):
         """
